@@ -29,7 +29,6 @@ class Animal:
     self.char = char
     self.iD = iD
     self.alive = True
-    world[self.x][self.y].append(self)
 
   def move(self):
 
@@ -82,7 +81,6 @@ class Food:
     self.x = x
     self.y = y
     self.char = "π"
-    world[self.x][self.y].append(self)
 
 
 
@@ -91,61 +89,91 @@ class Food:
 
 
 
+class World:
+  def __init__(self, xSize, ySize, foodPerDay):
+    self.xSize = xSize
+    self.ySize = ySize
+    self.foodPerDay = foodPerDay
+    self.grid = []
+    self.time = 0
+    self.foods = []
+    self.createGrid()
+  
 
-#grid creation
-world = []
-xSize = 10
-ySize = 10
-foodPerDay = 0
-time = 0
 
-def placeFood():
-  for i in range (foodPerDay):
-    food = Food(random.randint(0,xSize), random.randint(0,ySize))
+  def placeFood(self):
 
-def createGrid():
-  for i in range (ySize):
-    row = []
-    for j in range(xSize):
-      space = []
-      ter = Terrain(i,j)
-      space.append(ter)
-      row.append(space)
-    world.append(row)
+    if(len(self.foods) < 1):
+      for i in range (self.foodPerDay):
+        food = Food(random.randint(0,self.xSize - 1), random.randint(0,self.ySize - 1))
+        #push the food to the foods list 
+        self.foods.append(food)
+        #put the food in the grid 
+        self.grid[food.x][food.y].append(food)
+    else:
+      #make food grow out from other food 
+      for i in range(0, len(self.foods)):
+        ranX = random.randint(-1, 1) + self.foods[i].x
+        ranY = random.randint(-1, 1) + self.foods[i].y
+        if ((ranX) > self.xSize and ranX >= 0) and ((ranY) > self.ySize and ranY >= 0):
+        
     
-def printWorld():
-  print("")
-  for i in range (xSize):
-    for j in range(ySize):
-      for k in range(len(world[i][j])):
-        print(world[i][j][k].char,end = " ")
+            food = Food(ranX,ranY)
+            #push the food to the foods list 
+            self.foods.append(food)
+            #put the food in the grid 
+            self.grid[food.x][food.y].append(food)
+
+
+
+  def createGrid(self):
+    for i in range (self.ySize):
+      row = []
+      for j in range(self.xSize):
+        space = []
+        ter = Terrain(i,j)
+        space.append(ter)
+        row.append(space)
+      self.grid.append(row)
+    
+  def printWorld(self):
     print("")
-  
-  
-  print("")
-  print("Time : ", time)
+    for i in range (self.xSize):
+      for j in range(self.ySize):
 
-  
+        if(len(self.grid[i][j]) > 1):
+          #only print the char that isnt a Terrain
+          print(self.grid[i][j][1].char,end = " ")
 
+            
+        else: 
+          print(self.grid[i][j][0].char,end = " ")
+          
+
+
+      print("")
     
-createGrid()
-printWorld()
+    
+    print("")
+    print("Time : ", self.time)
+
+  def update(self):
+    if(self.time == 24):
+      self.time = 0
+    if(self.time == 0):
+      self.placeFood()
+   
+    clear()
+    self.printWorld()
+    self.time += 1
+    sleep(0.5)
+    
+    
+wOrLd = World(10, 10, 2)
+while(1):
+  wOrLd.update()
 
 
-#lets make an Animal
-animal = Animal(100, 0, int(xSize/2), int(ySize/2), "Q", 1)
-
-while(animal.isAlive):
-  if(time == 0):
-    placeFood()
-
-  if(time == 24):
-    time = 0
-  animal.update()
-  clear()
-  printWorld()
-  animal.printAnimalStatus()
-  time += 1
   
 
 
