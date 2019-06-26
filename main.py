@@ -5,6 +5,8 @@
 #Food copy and paste
 #π
 
+WORLDXSIZE = 30
+WORLDYSIZE = 30
 
 import random
 from time import sleep
@@ -21,9 +23,8 @@ class Terrain:
 
 
 class Animal:
-  def __init__(self, hunger, age, x, y, char, iD):
-    self.hunger = hunger
-    self.age = age
+  def __init__(self, x, y, char, iD):
+    self.hunger = 100
     self.x = x
     self.y = y
     self.char = char
@@ -32,21 +33,40 @@ class Animal:
 
   def move(self):
 
-    for i in range (len(world[self.x][self.y])):
-      if world[self.x][self.y][i] == self.iD:
-        del world[self.x][self.y][i]
+    #first step is take the list we're currently in and pop ourselves off it 
+    #take our current position and for loop thru until you find the animal on the list with our ID 
+    #the list we're on is just our x and y position on the grid 
 
-    moveBy = random.randint(0,4)
-    if moveBy == 1:
+    for i in range(0,len(wOrLd.grid[self.x][self.y])):
+      if isinstance(wOrLd.grid[self.x][self.y][i], Animal):
+        #just do a nested if 
+        if wOrLd.grid[self.x][self.y][i].iD == self.iD:
+          #now pop it out the list 
+          wOrLd.grid[self.x][self.y].pop(i)
+          #so now we dont exist in time or space
+
+    moveBy = random.randint(0,3)
+    if moveBy == 0:
       self.y += 1
-    if moveBy == 2:
+    if moveBy == 1:
       self.x += 1
-    if moveBy == 3:
+    if moveBy == 2:
       self.y -= 1
-    if moveBy == 4:
+    if moveBy == 3:
       self.x -= 1
 
-    world[self.x][self.y].append(self)
+    #check if the y or x is bigger than or smaller than x size or y size of the world, if it is set the x or y to wrap
+    
+    if self.x > WORLDXSIZE - 1:
+      self.x = 0
+    if self.y > WORLDYSIZE - 1:
+      self.y = 0
+    if self.x < 0:
+      self.x = WORLDXSIZE - 1
+    if self.y < 0:
+      self.y = WORLDYSIZE - 1
+    
+    wOrLd.grid[self.x][self.y].append(self)
       
     
   def isAlive(self):
@@ -55,8 +75,8 @@ class Animal:
       self.id = "x"
   
   def update(self):
-    self.hunger -= 2
-    self.isAlive()
+    #self.hunger -= 2
+    #self.isAlive()
     self.move()
     # self.checkForFood()
 
@@ -90,21 +110,27 @@ class Food:
 
 
 class World:
-  def __init__(self, xSize, ySize, foodPerDay):
+  def __init__(self, xSize, ySize, startingFood, startingAnimals):
     self.xSize = xSize
     self.ySize = ySize
-    self.foodPerDay = foodPerDay
+    self.startingFood = startingFood
     self.grid = []
     self.time = 0
     self.foods = []
+    self.animals = []
     self.createGrid()
-  
+    self.startingAnimals = startingAnimals
+    self.placeAnimals()
 
+  def placeAnimals(self):
+    for i in range(0, self.startingAnimals):
+      an = Animal(random.randint(0,self.xSize - 1), random.randint(0,self.ySize - 1),"δ",i)
+      self.animals.append(an)
+      self.grid[an.x][an.y].append(an)
 
   def placeFood(self):
-
     if(len(self.foods) < 1):
-      for i in range (self.foodPerDay):
+      for i in range (self.startingFood):
         food = Food(random.randint(0,self.xSize - 1), random.randint(0,self.ySize - 1))
         #push the food to the foods list 
         self.foods.append(food)
@@ -115,8 +141,8 @@ class World:
       for i in range(0, len(self.foods)):
         ranX = random.randint(-1, 1) + self.foods[i].x
         ranY = random.randint(-1, 1) + self.foods[i].y
-        if ((ranX) > self.xSize and ranX >= 0) and ((ranY) > self.ySize and ranY >= 0):
-        
+        if (ranX < self.xSize and ranX >= 0) and (ranY < self.ySize and ranY >= 0):
+    
     
             food = Food(ranX,ranY)
             #push the food to the foods list 
@@ -140,20 +166,12 @@ class World:
     print("")
     for i in range (self.xSize):
       for j in range(self.ySize):
-
         if(len(self.grid[i][j]) > 1):
           #only print the char that isnt a Terrain
-          print(self.grid[i][j][1].char,end = " ")
-
-            
+          print(self.grid[i][j][1].char,end = " ")     
         else: 
           print(self.grid[i][j][0].char,end = " ")
-          
-
-
       print("")
-    
-    
     print("")
     print("Time : ", self.time)
 
@@ -164,12 +182,17 @@ class World:
       self.placeFood()
    
     clear()
+
+    #a for loop to update all animals 
+
+    for animal in self.animals:
+      animal.update()
     self.printWorld()
     self.time += 1
     sleep(0.5)
     
     
-wOrLd = World(10, 10, 2)
+wOrLd = World(WORLDXSIZE, WORLDYSIZE, 10,15)
 while(1):
   wOrLd.update()
 
