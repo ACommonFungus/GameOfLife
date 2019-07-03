@@ -4,9 +4,10 @@
 
 #Food copy and paste
 #π
-
+# Ω
 WORLDXSIZE = 30
 WORLDYSIZE = 30
+foods = []
 
 import random
 from time import sleep
@@ -24,7 +25,7 @@ class Terrain:
 
 class Animal:
   def __init__(self, x, y, char, iD):
-    self.hunger = 100
+    self.eaten = 0
     self.x = x
     self.y = y
     self.char = char
@@ -44,6 +45,8 @@ class Animal:
           #now pop it out the list 
           wOrLd.grid[self.x][self.y].pop(i)
           #so now we dont exist in time or space
+          #temp fix 
+          break
 
     moveBy = random.randint(0,3)
     if moveBy == 0:
@@ -65,20 +68,40 @@ class Animal:
       self.x = WORLDXSIZE - 1
     if self.y < 0:
       self.y = WORLDYSIZE - 1
+
+    #here in the code we know where we're moving its stored in our self.x and self.y variables 
+    #we can look in the world grid and see if the space we're about to move into contains a food
+    #see if you can figure out how to pop the food off 
+    #first thing, check if a food exists on the same tile as us 
+    
+    self.eat()
     
     wOrLd.grid[self.x][self.y].append(self)
       
+  def eat(self):
+    for i in range(0,len(wOrLd.grid[self.x][self.y])):
+      if isinstance (wOrLd.grid[self.x][self.y][i], Food):
+        wOrLd.grid[self.x][self.y].pop(i)
+        self.eaten += 1
+        #pop from the foods list as well 
+        #we need to know which food to pop 
+        #we're gonna do that based on an x y coordinate match 
+        #loop through foods and find the food with our xy coordinate and pop it from the foods list
+        for i in range(0, len(foods)):
+          if foods[i].x == self.x and foods[i].y == self.y:
+            foods.pop(i)
+            break
+        break
+
+  def resetHunger(self):
+    self.eaten = 0
+        
+        
     
-  def isAlive(self):
-    if self.hunger <= 0:
-      self.isAlive = False
-      self.id = "x"
   
   def update(self):
-    #self.hunger -= 2
-    #self.isAlive()
     self.move()
-    # self.checkForFood()
+
 
   def printAnimalStatus(self):
     print(self.hunger, " hunger")
@@ -116,11 +139,12 @@ class World:
     self.startingFood = startingFood
     self.grid = []
     self.time = 0
-    self.foods = []
+    foods = []
     self.animals = []
     self.createGrid()
     self.startingAnimals = startingAnimals
     self.placeAnimals()
+    self.initializeFood()
 
   def placeAnimals(self):
     for i in range(0, self.startingAnimals):
@@ -128,25 +152,25 @@ class World:
       self.animals.append(an)
       self.grid[an.x][an.y].append(an)
 
-  def placeFood(self):
-    if(len(self.foods) < 1):
-      for i in range (self.startingFood):
+  def initializeFood(self):
+     for i in range (self.startingFood):
         food = Food(random.randint(0,self.xSize - 1), random.randint(0,self.ySize - 1))
         #push the food to the foods list 
-        self.foods.append(food)
+        foods.append(food)
         #put the food in the grid 
         self.grid[food.x][food.y].append(food)
-    else:
+
+  def placeFood(self):
       #make food grow out from other food 
-      for i in range(0, len(self.foods)):
-        ranX = random.randint(-1, 1) + self.foods[i].x
-        ranY = random.randint(-1, 1) + self.foods[i].y
+      for i in range(0, len(foods)):
+        ranX = random.randint(-1, 1) + foods[i].x
+        ranY = random.randint(-1, 1) + foods[i].y
         if (ranX < self.xSize and ranX >= 0) and (ranY < self.ySize and ranY >= 0):
     
     
             food = Food(ranX,ranY)
             #push the food to the foods list 
-            self.foods.append(food)
+            foods.append(food)
             #put the food in the grid 
             self.grid[food.x][food.y].append(food)
 
@@ -161,7 +185,28 @@ class World:
         space.append(ter)
         row.append(space)
       self.grid.append(row)
+ 
+      
+  def checkAnimals(self):
+    #go through the animals list and check if any animal has 0 eaten 
+    #if it has 0 eaten, then pop the animal and create a food with a special character at its position 
+    #if it has 1 or more just reset its eaten variabale 
     
+    for i in range(0, len(self.animals)):
+      if self.animals[i].eaten == 0:
+       
+        #we need to pop it from the world as well 
+        for j in range(0,len(wOrLd.grid[self.animals[i].x][self.animals[i].y])):
+          if isinstance(wOrLd.grid[self.animals[i].x][self.animals[i].y][j], Animal):
+            if wOrLd.grid[self.animals[i].x][self.animals[i].y][j].iD == self.animals[i].iD:
+              wOrLd.grid[self.animals[i].x][self.animals[i].y].pop(i)
+              break 
+      self.animals.pop(i)
+      break
+        #god help us i hope that works 
+
+    
+        
   def printWorld(self):
     print("")
     for i in range (self.xSize):
@@ -180,6 +225,9 @@ class World:
       self.time = 0
     if(self.time == 0):
       self.placeFood()
+      self.checkAnimals()
+    
+
    
     clear()
 
@@ -192,7 +240,7 @@ class World:
     sleep(0.5)
     
     
-wOrLd = World(WORLDXSIZE, WORLDYSIZE, 10,15)
+wOrLd = World(WORLDXSIZE, WORLDYSIZE, 25,15)
 while(1):
   wOrLd.update()
 
